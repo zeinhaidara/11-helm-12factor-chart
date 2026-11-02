@@ -1,0 +1,63 @@
+replicaCount: 2
+
+image:
+  repository: example.com/app
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+port: 8080
+
+serviceAccount:
+  create: true
+  name: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+probes:
+  readiness:
+    path: /ready
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  liveness:
+    path: /healthz
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+shutdown:
+  preStopSleepSeconds: 5
+  terminationGracePeriodSeconds: 30
+
+config:
+  LOG_LEVEL: info
+
+secrets:
+  enabled: false
+  # name of the SecretStore the ExternalSecret references
+  secretStoreName: example-secret-store
+  externalSecretsApiVersion: external-secrets.io/v1
+  # external-secrets.io/v1 is the storage version as of the external-secrets
+  # chart release 2.14.0 - check your operator's version before changing this
+  refreshInterval: 1h
+  keys:
+    - secretKey: API_KEY
+      remoteRef: app/api-key
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  minAvailable: 1
+
+networkPolicy:
+  allowedNamespaceLabel:
+    key: allowed-ingress
+    value: "true"
