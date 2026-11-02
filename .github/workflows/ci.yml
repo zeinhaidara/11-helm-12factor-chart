@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      HELM_VERSION: v4.3.1
+      KUBECONFORM_VERSION: v0.8.0
+    steps:
+      # actions/checkout v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: install helm
+        run: |
+          curl -sSLO "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
+          echo "0403a88ae20913d11b10a2467b50087721fea7581736da6b9d3992f5357fe54b  helm-${HELM_VERSION}-linux-amd64.tar.gz" | sha256sum -c -
+          tar -xzf "helm-${HELM_VERSION}-linux-amd64.tar.gz"
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+
+      - name: install kubeconform
+        run: |
+          curl -sSLO "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883  kubeconform-linux-amd64.tar.gz" | sha256sum -c -
+          tar -xzf kubeconform-linux-amd64.tar.gz
+          sudo mv kubeconform /usr/local/bin/kubeconform
+
+      - name: helm lint
+        run: helm lint charts/app
+
+      - name: helm template (default values)
+        run: helm template charts/app > /tmp/default.yaml
+
+      - name: helm template (prod values)
+        run: helm template charts/app -f charts/app/values-prod.yaml > /tmp/prod.yaml
+
+      - name: kubeconform (default values)
+        run: kubeconform -summary -ignore-missing-schemas /tmp/default.yaml
+
+      - name: kubeconform (prod values)
+        run: kubeconform -summary -ignore-missing-schemas /tmp/prod.yaml
+
+      - name: rendered-output tests
+        run: bash test/run.sh
