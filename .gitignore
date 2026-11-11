@@ -1,2 +1,6 @@
 .instruction/
 *.tgz
+*.tfplan
+__pycache__/
+*.pyc
+memory/
