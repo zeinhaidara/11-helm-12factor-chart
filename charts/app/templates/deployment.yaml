@@ -16,9 +16,16 @@ spec:
     spec:
       serviceAccountName: {{ include "app.serviceAccountName" . }}
       terminationGracePeriodSeconds: {{ .Values.shutdown.terminationGracePeriodSeconds }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: runtime
+              mountPath: /tmp
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
@@ -48,3 +55,6 @@ spec:
             preStop:
               exec:
                 command: ["sh", "-c", "sleep {{ .Values.shutdown.preStopSleepSeconds }}"]
+      volumes:
+        - name: runtime
+          emptyDir: {}
