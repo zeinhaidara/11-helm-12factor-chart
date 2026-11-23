@@ -35,6 +35,16 @@ helm template charts/app
 helm template charts/app -f charts/app/values-prod.yaml
 ```
 
+Run the same checks as CI (needs Helm and kubeconform, no cluster):
+
+```sh
+helm lint charts/app
+helm template charts/app > /tmp/default.yaml
+helm template charts/app -f charts/app/values-prod.yaml > /tmp/prod.yaml
+kubeconform -summary -ignore-missing-schemas /tmp/default.yaml /tmp/prod.yaml
+bash test/run.sh   # asserts on the rendered output for both value files
+```
+
 ## Status
 
 Tested with helm lint, helm template, kubeconform and a rendered-output test
